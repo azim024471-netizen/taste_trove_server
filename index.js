@@ -17,7 +17,7 @@ const port = process.env.PORT
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGO_DB_URI
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -41,17 +41,51 @@ async function run() {
 
 // recipes   api ///////////////////////
 
+app.get('/api/recipes', async (req, res) => {
+    const result = await recipeCollection.find().toArray(); 
+    res.json(result);
+});
+
+
+
+app.get('/api/recipes/user/:userId', async (req, res) => {
+    const userid = req.params.userId;
+    const query = { authorId: userid }; 
+    const result = await recipeCollection.find(query).toArray();
+    res.json(result);
+});
+
+
+
+app.get('/api/recipes/:id', async (req, res) => {
+
+  const id = req.params.id;
+
+  const query = {
+    _id : new ObjectId(id)
+  }
+
+    const result = await recipeCollection.findOne(query);
+    res.json(result);
+});
+
+
+ 
+app.post('/api/recipes' , async(req, res)=>{
+    const recipe = req.body
+
+    const recipeData = {
+        ...recipe,
+        createdAt : new Date()
+    }
+
+    const result = await recipeCollection.insertOne(recipeData);
+    res.send(result)
+})
 
 
 
 
-
-
-
-
-
-
-  
 
 
 
@@ -60,7 +94,8 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
+    console.log('everything is oky')
   }
 }
 run().catch(console.dir);
