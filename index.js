@@ -37,6 +37,7 @@ async function run() {
         
     const db = client.db('Taste_Trove');
     const recipeCollection = db.collection('recipes')
+    const favoritesCollection = db.collection('favorites')
 
 
 // recipes   api ///////////////////////
@@ -108,10 +109,6 @@ app.patch('/api/recipes/:id', async (req, res) => {
 
 
 
-
-
-
- 
 app.delete('/api/recipes/:id', async(req, res)=>{
   const id = req.params.id;
 const filter = { _id: new ObjectId(id) };
@@ -123,6 +120,30 @@ const filter = { _id: new ObjectId(id) };
 
 
 
+    // api for favorites //////////////////////////
+
+
+    app.post('/api/favorites', async (req, res) => {
+  const favoriteRecipe = req.body; 
+
+  const query = { 
+    userId: favoriteRecipe.userId, 
+    recipeId: favoriteRecipe.recipeId 
+  };
+
+
+  const alreadyExists = await favoritesCollection.findOne(query);
+
+  if (alreadyExists) {
+    return res.status(400).send({ 
+      success: false, 
+      message: "This recipe is already in your favorites!" 
+    });
+  }
+
+  const result = await favoritesCollection.insertOne(favoriteRecipe);
+  res.send({ success: true, result });
+});
 
 
 
