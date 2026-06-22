@@ -83,7 +83,58 @@ app.post('/api/recipes' , async(req, res)=>{
     res.send(result)
 })
 
+ 
 
+
+
+app.patch('/api/recipes/:id', async (req, res) => {  
+
+  const id = req.params.id
+
+  const reqData = req.body
+
+   const updateData ={
+    ...reqData ,
+     updatedAt: new Date(),
+  }
+
+   const query = {_id : new ObjectId(id)}
+
+   
+ const result = await recipeCollection.updateOne(query, {$set : updateData});
+ res.json(result)
+
+})
+
+
+
+
+
+
+ 
+app.delete('/api/recipes/:id', async(req, res)=>{
+  const id = req.params.id;
+const filter = { _id: new ObjectId(id) };
+
+  const result = await recipeCollection.deleteOne(filter);
+  res.json(result)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // extras ///////////////////
 
 
 
