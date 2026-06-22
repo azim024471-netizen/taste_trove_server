@@ -121,7 +121,15 @@ const filter = { _id: new ObjectId(id) };
 
 
     // api for favorites //////////////////////////
+  
+    app.get('/api/myFavorites/:userid', async(req, res)=>{
+    const userid = req.params.userId;
+    const query = { authorId: userid }; 
+    const result = await favoritesCollection.find(query).toArray();
+    res.json(result);
 
+    }
+  )
 
     app.post('/api/favorites', async (req, res) => {
   const favoriteRecipe = req.body; 
