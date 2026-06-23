@@ -46,8 +46,9 @@ async function run() {
 
 app.get('/api/recipes', async (req, res) => {
     try {
-        const { search, category, cuisine, servings } = req.query;
-
+        const { search, category, cuisine, servings,  page  } = req.query;
+        const perPage = 12;
+       
         let query = {};
 
         if (search) {
@@ -65,9 +66,21 @@ app.get('/api/recipes', async (req, res) => {
         if (servings) {
             query.servings = servings; 
         }
+         
 
-        const result = await recipeCollection.find(query).toArray(); 
-        res.json(result);
+
+         const currentPage = Number(page) || 1;
+        const skipItems = (currentPage - 1) * perPage;
+
+
+       const totalRecipes = await recipeCollection.countDocuments(query);
+
+       const recipes = await recipeCollection.find(query).sort({ createdAt: -1 }).skip(skipItems) .limit(perPage).toArray();
+
+        const  totalPages = Math.ceil(totalRecipes / perPage)
+
+
+        res.json({recipes,totalPages,totalRecipes,currentPage});
 
     } catch (error) {
         console.error("Error fetching recipes:", error);
