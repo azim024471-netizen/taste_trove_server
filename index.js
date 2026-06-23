@@ -42,9 +42,37 @@ async function run() {
 
 // recipes   api ///////////////////////
 
+
+
 app.get('/api/recipes', async (req, res) => {
-    const result = await recipeCollection.find().toArray(); 
-    res.json(result);
+    try {
+        const { search, category, cuisine, servings } = req.query;
+
+        let query = {};
+
+        if (search) {
+            query.recipeName = { $regex: search, $options: 'i' };
+        }
+
+        if (category) {
+            query.category = category; 
+        }
+
+        if (cuisine) {
+            query.cuisineType = cuisine; 
+        }
+
+        if (servings) {
+            query.servings = servings; 
+        }
+
+        const result = await recipeCollection.find(query).toArray(); 
+        res.json(result);
+
+    } catch (error) {
+        console.error("Error fetching recipes:", error);
+        res.status(500).json({ error: "Server error" });
+    }
 });
 
 
@@ -155,6 +183,13 @@ const filter = { _id: new ObjectId(id) };
 
 
 
+app.delete('/api/myFavorites/:id' , async (req, res)=>{
+    const id = req.params.id
+    const filter = {_id : new ObjectId(id)};
+    const result = await favoritesCollection.deleteOne(filter)
+    res.send(result)
+
+  })
 
 
 
