@@ -38,6 +38,8 @@ async function run() {
     const db = client.db('Taste_Trove');
     const recipeCollection = db.collection('recipes')
     const favoritesCollection = db.collection('favorites')
+    const purchasedCollection = db.collection('purchased')
+    const reportsCollection = db.collection('reports')
 
 
 // recipes   api ///////////////////////
@@ -47,7 +49,7 @@ async function run() {
 app.get('/api/recipes', async (req, res) => {
     try {
         const { search, category, cuisine, servings,  page  } = req.query;
-        const perPage = 12;
+        const perPage = 9;
        
         let query = {};
 
@@ -204,6 +206,74 @@ app.delete('/api/myFavorites/:id' , async (req, res)=>{
 
   })
 
+
+
+// api for Purchased ///////////////////////////////
+
+    app.post('/api/purchased', async (req, res) => {
+  const purchasedRecipe = req.body; 
+
+  const query = { 
+    userId: purchasedRecipe.userId, 
+    recipeId: purchasedRecipe.recipeId 
+  };
+
+
+  const alreadyExists = await purchasedCollection.findOne(query);
+
+  if (alreadyExists) {
+    return res.status(400).send({ 
+      success: false, 
+      message: "This recipe is already Purchased!" 
+    });
+  }
+
+  const result = await purchasedCollection.insertOne(purchasedRecipe);
+  res.send({ success: true, result });
+});
+
+
+// reports api /////////////////////////////////////////////////////////
+
+
+    app.post('/api/reports', async (req, res) => {
+  const reportsRecipe = req.body; 
+
+  const query = { 
+    userId: reportsRecipe.userId, 
+    recipeId: reportsRecipe.recipeId 
+  };
+
+
+  const alreadyExists = await reportsCollection.findOne(query);
+
+  if (alreadyExists) {
+    return res.status(400).send({ 
+      success: false, 
+    message: "You have already reported this recipe."
+    });
+  }
+
+  const result = await reportsCollection.insertOne(reportsRecipe);
+  res.send({ success: true, result });
+});
+
+
+
+app.get('/api/reports', async (req, res) => {
+  try {
+    const reports = await reportsCollection.find().sort({ reportedAt: -1 }).toArray();
+
+    res.send(reports);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).send({
+      success: false,
+      message: 'Failed to fetch reports',
+    });
+  }
+});
 
 
 
