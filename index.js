@@ -278,6 +278,69 @@ app.get('/api/reports', async (req, res) => {
 
 
 
+app.delete('/api/reports/remove-recipe/:reportId/:recipeId', async (req, res) => {
+  try {
+    const { reportId, recipeId } = req.params;
+
+    const reportDeleteResult = await reportsCollection.deleteOne({ 
+      _id: new ObjectId(reportId) 
+    });
+
+    const recipeDeleteResult = await recipeCollection.deleteOne({ 
+      _id: new ObjectId(recipeId) 
+    });
+
+  
+    if (reportDeleteResult.deletedCount === 0 && recipeDeleteResult.deletedCount === 0) {
+      return res.status(404).send({ 
+        success: false, 
+        message: "Report or Recipe not found in database." 
+      });
+    }
+
+    res.send({ 
+      success: true, 
+      message: "Report and Recipe successfully deleted." 
+    });
+
+  } catch (error) {
+    console.error("Error deleting report and recipe:", error);
+    res.status(500).send({ 
+      success: false, 
+      message: "Internal server error failed to delete." 
+    });
+  }
+});
+
+
+app.delete('/api/reports/:reportId', async (req, res) => {
+  
+    const { reportId } = req.params;
+
+    const result = await reportsCollection.deleteOne({ 
+      _id: new ObjectId(reportId) 
+    });
+
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ 
+        success: false, 
+        message: "Report not found in database." 
+      });
+    }
+
+
+    res.send({ 
+      success: true, 
+      message: "Report dismissed successfully." 
+    });
+
+  
+});
+
+
+
+
 
 
 
