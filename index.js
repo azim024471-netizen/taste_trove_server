@@ -34,7 +34,7 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-        
+
     const db = client.db('Taste_Trove');
     const recipeCollection = db.collection('recipes')
     const favoritesCollection = db.collection('favorites')
@@ -42,301 +42,320 @@ async function run() {
     const reportsCollection = db.collection('reports')
 
 
-// recipes   api ///////////////////////
+    // recipes   api ///////////////////////
 
 
 
-app.get('/api/recipes', async (req, res) => {
-    try {
-        const { search, category, cuisine, servings,  page  } = req.query;
+    app.get('/api/recipes', async (req, res) => {
+      try {
+        const { search, category, cuisine, servings, page } = req.query;
         const perPage = 9;
-       
+
         let query = {};
 
         if (search) {
-            query.recipeName = { $regex: search, $options: 'i' };
+          query.recipeName = { $regex: search, $options: 'i' };
         }
 
         if (category) {
-            query.category = category; 
+          query.category = category;
         }
 
         if (cuisine) {
-            query.cuisineType = cuisine; 
+          query.cuisineType = cuisine;
         }
 
         if (servings) {
-            query.servings = servings; 
+          query.servings = servings;
         }
-         
 
 
-         const currentPage = Number(page) || 1;
+
+        const currentPage = Number(page) || 1;
         const skipItems = (currentPage - 1) * perPage;
 
 
-       const totalRecipes = await recipeCollection.countDocuments(query);
+        const totalRecipes = await recipeCollection.countDocuments(query);
 
-       const recipes = await recipeCollection.find(query).sort({ createdAt: -1 }).skip(skipItems) .limit(perPage).toArray();
+        const recipes = await recipeCollection.find(query).sort({ createdAt: -1 }).skip(skipItems).limit(perPage).toArray();
 
-        const  totalPages = Math.ceil(totalRecipes / perPage)
+        const totalPages = Math.ceil(totalRecipes / perPage)
 
 
-        res.json({recipes,totalPages,totalRecipes,currentPage});
+        res.json({ recipes, totalPages, totalRecipes, currentPage });
 
-    } catch (error) {
+      } catch (error) {
         console.error("Error fetching recipes:", error);
         res.status(500).json({ error: "Server error" });
-    }
-});
+      }
+    });
 
 
 
-app.get('/api/recipes/user/:userId', async (req, res) => {
-    const userid = req.params.userId;
-    const query = { authorId: userid }; 
-    const result = await recipeCollection.find(query).toArray();
-    res.json(result);
-});
+    app.get('/api/recipes/user/:userId', async (req, res) => {
+      const userid = req.params.userId;
+      const query = { authorId: userid };
+      const result = await recipeCollection.find(query).toArray();
+      res.json(result);
+    });
 
 
 
-app.get('/api/recipes/:id', async (req, res) => {
+    app.get('/api/recipes/:id', async (req, res) => {
 
-  const id = req.params.id;
+      const id = req.params.id;
 
-  const query = {
-    _id : new ObjectId(id)
-  }
+      const query = {
+        _id: new ObjectId(id)
+      }
 
-    const result = await recipeCollection.findOne(query);
-    res.json(result);
-});
+      const result = await recipeCollection.findOne(query);
+      res.json(result);
+    });
 
 
- 
-app.post('/api/recipes' , async(req, res)=>{
-    const recipe = req.body
 
-    const recipeData = {
+    app.post('/api/recipes', async (req, res) => {
+      const recipe = req.body
+
+      const recipeData = {
         ...recipe,
-        createdAt : new Date()
-    }
+        createdAt: new Date()
+      }
 
-    const result = await recipeCollection.insertOne(recipeData);
-    res.send(result)
-})
-
- 
+      const result = await recipeCollection.insertOne(recipeData);
+      res.send(result)
+    })
 
 
 
-app.patch('/api/recipes/:id', async (req, res) => {  
-
-  const id = req.params.id
-
-  const reqData = req.body
-
-   const updateData ={
-    ...reqData ,
-     updatedAt: new Date(),
-  }
-
-   const query = {_id : new ObjectId(id)}
-
-   
- const result = await recipeCollection.updateOne(query, {$set : updateData});
- res.json(result)
-
-})
 
 
+    app.patch('/api/recipes/:id', async (req, res) => {
 
-app.delete('/api/recipes/:id', async(req, res)=>{
-  const id = req.params.id;
-const filter = { _id: new ObjectId(id) };
+      const id = req.params.id
 
-  const result = await recipeCollection.deleteOne(filter);
-  res.json(result)
-})
+      const reqData = req.body
+
+      const updateData = {
+        ...reqData,
+        updatedAt: new Date(),
+      }
+
+      const query = { _id: new ObjectId(id) }
+
+
+      const result = await recipeCollection.updateOne(query, { $set: updateData });
+      res.json(result)
+
+    })
+
+
+
+    app.delete('/api/recipes/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+
+      const result = await recipeCollection.deleteOne(filter);
+      res.json(result)
+    })
 
 
 
 
     // api for favorites //////////////////////////
-  
-    app.get('/api/myFavorites/:userid', async(req, res)=>{
-    const userid = req.params.userId;
-    const query = { authorId: userid }; 
-    const result = await favoritesCollection.find(query).toArray();
-    res.json(result);
+
+    app.get('/api/myFavorites/:userid', async (req, res) => {
+      const userid = req.params.userId;
+      const query = { authorId: userid };
+      const result = await favoritesCollection.find(query).toArray();
+      res.json(result);
 
     }
-  )
+    )
 
     app.post('/api/favorites', async (req, res) => {
-  const favoriteRecipe = req.body; 
+      const favoriteRecipe = req.body;
 
-  const query = { 
-    userId: favoriteRecipe.userId, 
-    recipeId: favoriteRecipe.recipeId 
-  };
+      const query = {
+        userId: favoriteRecipe.userId,
+        recipeId: favoriteRecipe.recipeId
+      };
 
 
-  const alreadyExists = await favoritesCollection.findOne(query);
+      const alreadyExists = await favoritesCollection.findOne(query);
 
-  if (alreadyExists) {
-    return res.status(400).send({ 
-      success: false, 
-      message: "This recipe is already in your favorites!" 
+      if (alreadyExists) {
+        return res.status(400).send({
+          success: false,
+          message: "This recipe is already in your favorites!"
+        });
+      }
+
+      const result = await favoritesCollection.insertOne(favoriteRecipe);
+      res.send({ success: true, result });
     });
-  }
-
-  const result = await favoritesCollection.insertOne(favoriteRecipe);
-  res.send({ success: true, result });
-});
 
 
 
-app.delete('/api/myFavorites/:id' , async (req, res)=>{
-    const id = req.params.id
-    const filter = {_id : new ObjectId(id)};
-    const result = await favoritesCollection.deleteOne(filter)
-    res.send(result)
+    app.delete('/api/myFavorites/:id', async (req, res) => {
+      const id = req.params.id
+      const filter = { _id: new ObjectId(id) };
+      const result = await favoritesCollection.deleteOne(filter)
+      res.send(result)
 
-  })
+    })
 
 
 
-// api for Purchased ///////////////////////////////
+    // api for Purchased ///////////////////////////////
 
     app.post('/api/purchased', async (req, res) => {
-  const purchasedRecipe = req.body; 
+      const purchasedRecipe = req.body;
 
-  const query = { 
-    userId: purchasedRecipe.userId, 
-    recipeId: purchasedRecipe.recipeId 
-  };
+      const query = {
+        userId: purchasedRecipe.userId,
+        recipeId: purchasedRecipe.recipeId
+      };
 
 
-  const alreadyExists = await purchasedCollection.findOne(query);
+      const alreadyExists = await purchasedCollection.findOne(query);
 
-  if (alreadyExists) {
-    return res.status(400).send({ 
-      success: false, 
-      message: "This recipe is already Purchased!" 
+      if (alreadyExists) {
+        return res.status(400).send({
+          success: false,
+          message: "This recipe is already Purchased!"
+        });
+      }
+
+      const result = await purchasedCollection.insertOne(purchasedRecipe);
+      res.send({ success: true, result });
     });
-  }
-
-  const result = await purchasedCollection.insertOne(purchasedRecipe);
-  res.send({ success: true, result });
-});
 
 
-// reports api /////////////////////////////////////////////////////////
+    // reports api /////////////////////////////////////////////////////////
 
 
     app.post('/api/reports', async (req, res) => {
-  const reportsRecipe = req.body; 
+      const reportsRecipe = req.body;
 
-  const query = { 
-    userId: reportsRecipe.userId, 
-    recipeId: reportsRecipe.recipeId 
-  };
-
-
-  const alreadyExists = await reportsCollection.findOne(query);
-
-  if (alreadyExists) {
-    return res.status(400).send({ 
-      success: false, 
-    message: "You have already reported this recipe."
-    });
-  }
-
-  const result = await reportsCollection.insertOne(reportsRecipe);
-  res.send({ success: true, result });
-});
+      const query = {
+        userId: reportsRecipe.userId,
+        recipeId: reportsRecipe.recipeId
+      };
 
 
+      const alreadyExists = await reportsCollection.findOne(query);
 
-app.get('/api/reports', async (req, res) => {
-  try {
-    const reports = await reportsCollection.find().sort({ reportedAt: -1 }).toArray();
+      if (alreadyExists) {
+        return res.status(400).send({
+          success: false,
+          message: "You have already reported this recipe."
+        });
+      }
 
-    res.send(reports);
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).send({
-      success: false,
-      message: 'Failed to fetch reports',
-    });
-  }
-});
-
-
-
-
-app.delete('/api/reports/remove-recipe/:reportId/:recipeId', async (req, res) => {
-  try {
-    const { reportId, recipeId } = req.params;
-
-    const reportDeleteResult = await reportsCollection.deleteOne({ 
-      _id: new ObjectId(reportId) 
+      const result = await reportsCollection.insertOne(reportsRecipe);
+      res.send({ success: true, result });
     });
 
-    const recipeDeleteResult = await recipeCollection.deleteOne({ 
-      _id: new ObjectId(recipeId) 
+
+
+    app.get('/api/reports', async (req, res) => {
+      try {
+        const reports = await reportsCollection.find().sort({ reportedAt: -1 }).toArray();
+
+        res.send(reports);
+      } catch (error) {
+        console.error(error);
+
+        res.status(500).send({
+          success: false,
+          message: 'Failed to fetch reports',
+        });
+      }
     });
 
-  
-    if (reportDeleteResult.deletedCount === 0 && recipeDeleteResult.deletedCount === 0) {
-      return res.status(404).send({ 
-        success: false, 
-        message: "Report or Recipe not found in database." 
+
+
+
+    app.delete('/api/reports/remove-recipe/:reportId/:recipeId', async (req, res) => {
+      try {
+        const { reportId, recipeId } = req.params;
+
+        const reportDeleteResult = await reportsCollection.deleteOne({
+          _id: new ObjectId(reportId)
+        });
+
+        const recipeDeleteResult = await recipeCollection.deleteOne({
+          _id: new ObjectId(recipeId)
+        });
+
+
+        if (reportDeleteResult.deletedCount === 0 && recipeDeleteResult.deletedCount === 0) {
+          return res.status(404).send({
+            success: false,
+            message: "Report or Recipe not found in database."
+          });
+        }
+
+        res.send({
+          success: true,
+          message: "Report and Recipe successfully deleted."
+        });
+
+      } catch (error) {
+        console.error("Error deleting report and recipe:", error);
+        res.status(500).send({
+          success: false,
+          message: "Internal server error failed to delete."
+        });
+      }
+    });
+
+
+    app.delete('/api/reports/:reportId', async (req, res) => {
+
+      const { reportId } = req.params;
+
+      const result = await reportsCollection.deleteOne({
+        _id: new ObjectId(reportId)
       });
-    }
-
-    res.send({ 
-      success: true, 
-      message: "Report and Recipe successfully deleted." 
-    });
-
-  } catch (error) {
-    console.error("Error deleting report and recipe:", error);
-    res.status(500).send({ 
-      success: false, 
-      message: "Internal server error failed to delete." 
-    });
-  }
-});
 
 
-app.delete('/api/reports/:reportId', async (req, res) => {
-  
-    const { reportId } = req.params;
+      if (result.deletedCount === 0) {
+        return res.status(404).send({
+          success: false,
+          message: "Report not found in database."
+        });
+      }
 
-    const result = await reportsCollection.deleteOne({ 
-      _id: new ObjectId(reportId) 
-    });
 
-    
-    if (result.deletedCount === 0) {
-      return res.status(404).send({ 
-        success: false, 
-        message: "Report not found in database." 
+      res.send({
+        success: true,
+        message: "Report dismissed successfully."
       });
-    }
 
 
-    res.send({ 
-      success: true, 
-      message: "Report dismissed successfully." 
     });
 
-  
-});
+
+    // feature api //////////////////
+
+
+    app.patch('/api/recipes/feature/:id', async (req, res) => {
+      const id = req.params.id;
+      const { isFeatured } = req.body;
+      const query = { _id: new ObjectId(id) }
+
+
+
+      const result = await recipeCollection.updateOne(
+        query,
+        { $set: { isFeatured: isFeatured } }
+      );
+
+      res.json(result);
+    });
 
 
 
@@ -344,7 +363,13 @@ app.delete('/api/reports/:reportId', async (req, res) => {
 
 
 
-  // extras ///////////////////
+
+
+
+
+
+
+    // extras ///////////////////
 
 
 
