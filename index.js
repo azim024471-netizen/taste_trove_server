@@ -217,21 +217,35 @@ async function run() {
 
   // purched api /////////////////////
 
+  app.get('/api/purchased/:userId', async (req, res) => {
+  
+    const id = req.params.userId; 
+    const query = { userId: id}; 
+
+    const result = await purchasedCollection.find(query).toArray();
+
+    res.send({ 
+      success: true, 
+      count: result.length, 
+      data: result 
+    });
+  
+});
+
+
+
+
+
+
+
+
     app.post('/api/purchased', async (req, res) => {
       const purchasedRecipe = req.body;
       const query = {
         userId: purchasedRecipe.userId,
         recipeId: purchasedRecipe.recipeId
       };
-
-      const alreadyExists = await purchasedCollection.findOne(query);
-      if (alreadyExists) {
-        return res.status(400).send({
-          success: false,
-          message: "This recipe is already Purchased!"
-        });
-      }
-       
+    
       newPurchasedPecipe={
         ...purchasedRecipe,
         purchasedAt:  new Date(),
