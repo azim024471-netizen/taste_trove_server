@@ -215,23 +215,22 @@ async function run() {
 
 
 
-  // purched api /////////////////////
+    // purched api /////////////////////
 
-  app.get('/api/purchased/:userId', async (req, res) => {
-  
-    const id = req.params.userId; 
-    const query = { userId: id}; 
+    app.get('/api/purchased/:userId', async (req, res) => {
 
-    const result = await purchasedCollection.find(query).toArray();
+      const id = req.params.userId;
+      const query = { userId: id };
 
-    res.send({ 
-      success: true, 
-      count: result.length, 
-      data: result 
+      const result = await purchasedCollection.find(query).toArray();
+
+      res.send({
+        success: true,
+        count: result.length,
+        data: result
+      });
+
     });
-  
-});
-
 
 
 
@@ -245,10 +244,10 @@ async function run() {
         userId: purchasedRecipe.userId,
         recipeId: purchasedRecipe.recipeId
       };
-    
-      newPurchasedPecipe={
+
+      newPurchasedPecipe = {
         ...purchasedRecipe,
-        purchasedAt:  new Date(),
+        purchasedAt: new Date(),
       }
 
       const result = await purchasedCollection.insertOne(newPurchasedPecipe);
@@ -257,58 +256,99 @@ async function run() {
 
 
 
-// upgrade user type /////////////////////
+    // upgrade user type /////////////////////
 
-app.patch('/api/users/upgrade-premium/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { planType } = req.body;
+    app.patch('/api/users/upgrade-premium/:userId', async (req, res) => {
+      try {
+        const { userId } = req.params;
+        const { planType } = req.body;
 
-    if (!userId || userId === 'undefined') {
-      return res.status(400).json({ success: false, message: 'User ID is missing' });
-    }
-    const query = { _id: new ObjectId(userId) };
+        if (!userId || userId === 'undefined') {
+          return res.status(400).json({ success: false, message: 'User ID is missing' });
+        }
+        const query = { _id: new ObjectId(userId) };
 
-    const result = await usersCollection.updateOne(
-      query,
-      { 
-        $set: { 
-          user_type: planType,
-          updatedAt: new Date() 
-        } 
+        const result = await usersCollection.updateOne(
+          query,
+          {
+            $set: {
+              user_type: planType,
+              updatedAt: new Date()
+            }
+          }
+        );
+
+
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ success: false, message: 'User not found in database!' });
+        }
+        res.json({ success: true, message: 'User upgraded successfully', result });
+
+      } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to upgrade' });
       }
-    );
-
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ success: false, message: 'User not found in database!' });
-    }
-    res.json({ success: true, message: 'User upgraded successfully', result });
-
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to upgrade' });
-  }
-});
-
-
-
-
-
-// ── Payment save ////////////////////////////////////
-
-app.post('/api/payments', async (req, res) => {
-  try {
-    const payment = req.body;
-    const result = await paymentsCollection.insertOne({
-      ...payment,
-      paidAt: new Date(),
     });
-    res.json({ success: true, result });
+
+
+
+
+
+    // ──   transactions////////////////////////////////////
+
+    app.post('/api/payments', async (req, res) => {
+      try {
+        const payment = req.body;
+        const result = await paymentsCollection.insertOne({
+          ...payment,
+          paidAt: new Date(),
+        });
+        res.json({ success: true, result });
+      } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to save payment' });
+      }
+    });
+
+
+
+   app.get('/api/payments', async (req, res) => {
+  try {
+    const result = await paymentsCollection.find().sort({ paidAt: -1 }).toArray();
+    res.json(result);
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to save payment' });
+    res.status(500).json({ success: false, message: 'Failed to fetch payments' });
   }
 });
 
+  // api for count //////////
+  
+
+app.get('/api/admin/count-info', async (req, res) => {
+    try {
+           const totalReports= await reportsCollection.countDocuments({})
+           const totalRecipes =await recipeCollection.countDocuments({})
+           const totalUsers = await usersCollection.countDocuments({})
+          const totalPremium = await  usersCollection.countDocuments({ 
+                user_type: { $in: ['elite', 'standard'] } 
+            })
+        
+        res.json({
+            success: true,
+            data: {
+                totalReports,
+                totalRecipes,
+                totalUsers,
+                totalPremiumMembers: totalPremium
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching count info:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to fetch dashboard count information" 
+        });
+    }
+});
 
 
 
