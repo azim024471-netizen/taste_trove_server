@@ -42,6 +42,12 @@ async function run() {
     const reportsCollection = db.collection('reports')
 
 
+
+    const usersCollection = db.collection('user')
+    const paymentsCollection = db.collection('payments')
+
+
+
     // recipes   api ///////////////////////
 
 
@@ -208,29 +214,88 @@ async function run() {
 
 
 
-    // api for Purchased ///////////////////////////////
+
+  // purched api /////////////////////
 
     app.post('/api/purchased', async (req, res) => {
       const purchasedRecipe = req.body;
-
       const query = {
         userId: purchasedRecipe.userId,
         recipeId: purchasedRecipe.recipeId
       };
 
-
       const alreadyExists = await purchasedCollection.findOne(query);
-
       if (alreadyExists) {
         return res.status(400).send({
           success: false,
           message: "This recipe is already Purchased!"
         });
       }
+       
+      newPurchasedPecipe={
+        ...purchasedRecipe,
+        purchasedAt:  new Date(),
+      }
 
-      const result = await purchasedCollection.insertOne(purchasedRecipe);
+      const result = await purchasedCollection.insertOne(newPurchasedPecipe);
       res.send({ success: true, result });
     });
+
+
+
+// upgrade user type /////////////////////
+
+app.patch('/api/users/upgrade-premium/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { planType } = req.body;
+
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({ success: false, message: 'User ID is missing' });
+    }
+    const query = { _id: new ObjectId(userId) };
+
+    const result = await usersCollection.updateOne(
+      query,
+      { 
+        $set: { 
+          user_type: planType,
+          updatedAt: new Date() 
+        } 
+      }
+    );
+
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, message: 'User not found in database!' });
+    }
+    res.json({ success: true, message: 'User upgraded successfully', result });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to upgrade' });
+  }
+});
+
+
+
+
+
+// ── Payment save ////////////////////////////////////
+
+app.post('/api/payments', async (req, res) => {
+  try {
+    const payment = req.body;
+    const result = await paymentsCollection.insertOne({
+      ...payment,
+      paidAt: new Date(),
+    });
+    res.json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to save payment' });
+  }
+});
+
+
 
 
     // reports api /////////////////////////////////////////////////////////
@@ -339,6 +404,10 @@ async function run() {
     });
 
 
+
+
+
+
     // feature api //////////////////
 
 
@@ -356,15 +425,6 @@ async function run() {
 
       res.json(result);
     });
-
-
-
-
-
-
-
-
-
 
 
 
