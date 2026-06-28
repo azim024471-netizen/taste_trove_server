@@ -41,8 +41,6 @@ async function run() {
     const purchasedCollection = db.collection('purchased')
     const reportsCollection = db.collection('reports')
 
-
-
     const usersCollection = db.collection('user')
     const paymentsCollection = db.collection('payments')
 
@@ -50,6 +48,15 @@ async function run() {
 
     // recipes   api ///////////////////////
 
+ app.get('/api/recipes/all', async (req, res) => {
+  
+    const recipes = await recipeCollection.find({}).sort({ createdAt: -1 }).toArray();
+    
+    res.send({
+        recipes
+    })
+  
+});
 
 
     app.get('/api/recipes', async (req, res) => {
@@ -118,6 +125,13 @@ async function run() {
       const result = await recipeCollection.findOne(query);
       res.json(result);
     });
+
+
+
+   
+
+
+
 
 
 
@@ -352,6 +366,34 @@ app.get('/api/admin/count-info', async (req, res) => {
 
 
 
+app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
+  const userID = req.params.userID;
+
+  try {
+    const recipes = await recipeCollection.find({ authorId: userID }).toArray();
+    
+    const favoritesCount = await favoritesCollection.countDocuments({ userId: userID });
+
+    const totalRecipes = recipes.length;
+    const totalLikesReceived = recipes.reduce((sum, recipe) => sum + (recipe.likesCount || 0), 0);
+
+    res.json({
+      totalRecipes,
+      totalFavorites: favoritesCount,
+      totalLikesReceived
+    });
+
+  } catch (error) {
+    console.error("Dashboard Stats Error:", error);
+    res.status(500).json({ error: "Stats not found" });
+  }
+});
+
+
+
+
+
+
     // reports api /////////////////////////////////////////////////////////
 
 
@@ -474,7 +516,7 @@ app.get('/api/admin/count-info', async (req, res) => {
 
       const result = await recipeCollection.updateOne(
         query,
-        { $set: { isFeatured: isFeatured } }
+        { $set: { isFeatured: isFeatured  ,  updatedAt: new Date() } }
       );
 
       res.json(result);
