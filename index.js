@@ -39,6 +39,64 @@ async function run() {
     const usersCollection = db.collection('user')
     const paymentsCollection = db.collection('payments')
 
+             const sessionCollection = database.collection("session");
+
+      // verifyTokern 
+
+ const verifyToken = async(req, res, next)=> {
+
+  const authHeader= req.headers
+     const authorization = authHeader?.authorization
+  console.log(authorization , 'result from backend')
+    
+  if(!authorization){
+    return res.status(401).send({message:"unauthorizaied access"})
+  }
+
+  const token = authorization.split(" ")[1]
+     
+  
+  if(!token){
+    return res.status(401).send({message:"unauthorizaied access"})
+  }
+
+  const query = {token:token};
+
+  const session = await sessionCollection.findOne(query)
+
+  if(!session){
+    return res.status(401).send({message:"unauthorizaied access"})
+  }
+
+  const userId = session.userId
+
+  // console.log(userId, 'session form backend consol')
+
+  const userQuery = {
+    _id:userId
+  }
+
+  const user = await usersCollection.findOne(userQuery)
+
+  
+  if(!user){
+    return res.status(401).send({message:"unauthorizaied access"})
+  }
+
+  // console.log(user, 'user from backend consol')
+
+  // se t data in the req obj ///////////
+
+  req.user = user
+
+  next()
+
+}     
+
+
+//  end of verifyToken //////////
+
+
 
 
     // recipes   api ///////////////////////
@@ -338,7 +396,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
 
 
-   app.get('/api/payments', async (req, res) => {
+   app.get('/api/payments', verifyToken, async (req, res) => {
   try {
     const result = await paymentsCollection.find().sort({ paidAt: -1 }).toArray();
     res.json(result);
