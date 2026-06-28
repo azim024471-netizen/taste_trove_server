@@ -13,14 +13,9 @@ dotenv.config();
 const port = process.env.PORT
 
 
-
-
-
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.MONGO_DB_URI
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -47,6 +42,32 @@ async function run() {
 
 
     // recipes   api ///////////////////////
+
+app.get('/api/recipes/home-data', async (req, res) => {
+  try {
+    const popularRecipes = await recipeCollection
+      .find({})
+      .sort({ likesCount: -1 })
+      .limit(4)
+      .toArray();
+
+    const featuredRecipes = await recipeCollection
+      .find({ isFeatured: true })
+      .sort({ updatedAt: -1, createdAt: -1 }) 
+      .limit(6)
+      .toArray();
+
+    res.send({
+      success: true,
+      popularRecipes,
+      featuredRecipes
+    });
+  } catch (error) {
+    console.error("Error fetching home data:", error);
+    res.status(500).send({ success: false, message: "Failed to fetch home data" });
+  }
+});
+
 
  app.get('/api/recipes/all', async (req, res) => {
   
@@ -129,11 +150,6 @@ async function run() {
 
 
    
-
-
-
-
-
 
     app.post('/api/recipes', async (req, res) => {
       const recipe = req.body
@@ -227,7 +243,9 @@ async function run() {
     })
 
 
+  
 
+  
 
     // purched api /////////////////////
 
@@ -245,10 +263,6 @@ async function run() {
       });
 
     });
-
-
-
-
 
 
 
