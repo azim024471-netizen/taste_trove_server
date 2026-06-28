@@ -39,7 +39,7 @@ async function run() {
     const usersCollection = db.collection('user')
     const paymentsCollection = db.collection('payments')
 
-             const sessionCollection = database.collection("session");
+    const sessionCollection = db.collection("session");
 
       // verifyTokern 
 
@@ -96,7 +96,12 @@ async function run() {
 
 //  end of verifyToken //////////
 
-
+    const verifyAdmin = async (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).send({ message: 'forbidden access' })
+    }
+    next();
+}
 
 
     // recipes   api ///////////////////////
@@ -182,9 +187,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
       }
     });
 
-
-
-    app.get('/api/recipes/user/:userId', async (req, res) => {
+    app.get('/api/recipes/user/:userId', verifyToken, async (req, res) => {
       const userid = req.params.userId;
       const query = { authorId: userid };
       const result = await recipeCollection.find(query).toArray();
@@ -193,7 +196,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
 
 
-    app.get('/api/recipes/:id', async (req, res) => {
+    app.get('/api/recipes/:id',verifyToken, async (req, res) => {
 
       const id = req.params.id;
 
@@ -206,10 +209,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
     });
 
 
-
-   
-
-    app.post('/api/recipes', async (req, res) => {
+    app.post('/api/recipes',verifyToken, async (req, res) => {
       const recipe = req.body
 
       const recipeData = {
@@ -223,9 +223,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
 
 
-
-
-    app.patch('/api/recipes/:id', async (req, res) => {
+    app.patch('/api/recipes/:id',verifyToken, async (req, res) => {
 
       const id = req.params.id
 
@@ -245,8 +243,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
     })
 
 
-
-    app.delete('/api/recipes/:id', async (req, res) => {
+    app.delete('/api/recipes/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
 
@@ -254,12 +251,9 @@ app.get('/api/recipes/home-data', async (req, res) => {
       res.json(result)
     })
 
-
-
-
     // api for favorites //////////////////////////
 
-    app.get('/api/myFavorites/:userid', async (req, res) => {
+    app.get('/api/myFavorites/:userId', async (req, res) => {
       const userid = req.params.userId;
       const query = { authorId: userid };
       const result = await favoritesCollection.find(query).toArray();
@@ -268,7 +262,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
     }
     )
 
-    app.post('/api/favorites', async (req, res) => {
+    app.post('/api/favorites',verifyToken, async (req, res) => {
       const favoriteRecipe = req.body;
 
       const query = {
@@ -292,7 +286,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
 
 
-    app.delete('/api/myFavorites/:id', async (req, res) => {
+    app.delete('/api/myFavorites/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       const filter = { _id: new ObjectId(id) };
       const result = await favoritesCollection.deleteOne(filter)
@@ -303,11 +297,9 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
   
 
-  
-
     // purched api /////////////////////
 
-    app.get('/api/purchased/:userId', async (req, res) => {
+    app.get('/api/purchased/:userId',verifyToken, async (req, res) => {
 
       const id = req.params.userId;
       const query = { userId: id };
@@ -324,14 +316,14 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
 
 
-    app.post('/api/purchased', async (req, res) => {
+    app.post('/api/purchased',verifyToken, async (req, res) => {
       const purchasedRecipe = req.body;
       const query = {
         userId: purchasedRecipe.userId,
         recipeId: purchasedRecipe.recipeId
       };
 
-      newPurchasedPecipe = {
+    const newPurchasedPecipe = {
         ...purchasedRecipe,
         purchasedAt: new Date(),
       }
@@ -344,7 +336,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
     // upgrade user type /////////////////////
 
-    app.patch('/api/users/upgrade-premium/:userId', async (req, res) => {
+    app.patch('/api/users/upgrade-premium/:userId',verifyToken, async (req, res) => {
       try {
         const { userId } = req.params;
         const { planType } = req.body;
@@ -381,7 +373,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
     // ──   transactions////////////////////////////////////
 
-    app.post('/api/payments', async (req, res) => {
+    app.post('/api/payments', verifyToken, async (req, res) => {
       try {
         const payment = req.body;
         const result = await paymentsCollection.insertOne({
@@ -396,7 +388,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
 
 
-   app.get('/api/payments', verifyToken, async (req, res) => {
+   app.get('/api/payments', verifyToken, verifyAdmin, async (req, res) => {
   try {
     const result = await paymentsCollection.find().sort({ paidAt: -1 }).toArray();
     res.json(result);
@@ -408,7 +400,7 @@ app.get('/api/recipes/home-data', async (req, res) => {
   // api for count //////////
   
 
-app.get('/api/admin/count-info', async (req, res) => {
+app.get('/api/admin/count-info',verifyToken,verifyAdmin, async (req, res) => {
     try {
            const totalReports= await reportsCollection.countDocuments({})
            const totalRecipes =await recipeCollection.countDocuments({})
@@ -438,7 +430,7 @@ app.get('/api/admin/count-info', async (req, res) => {
 
 
 
-app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
+app.get('/api/user/dashboard-stats/:userID', verifyToken, async (req, res) => {
   const userID = req.params.userID;
 
   try {
@@ -469,7 +461,7 @@ app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
     // reports api /////////////////////////////////////////////////////////
 
 
-    app.post('/api/reports', async (req, res) => {
+    app.post('/api/reports', verifyToken, async (req, res) => {
       const reportsRecipe = req.body;
 
       const query = {
@@ -493,7 +485,7 @@ app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
 
 
 
-    app.get('/api/reports', async (req, res) => {
+    app.get('/api/reports',verifyToken,verifyAdmin, async (req, res) => {
       try {
         const reports = await reportsCollection.find().sort({ reportedAt: -1 }).toArray();
 
@@ -511,7 +503,7 @@ app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
 
 
 
-    app.delete('/api/reports/remove-recipe/:reportId/:recipeId', async (req, res) => {
+    app.delete('/api/reports/remove-recipe/:reportId/:recipeId', verifyToken, verifyAdmin, async (req, res) => {
       try {
         const { reportId, recipeId } = req.params;
 
@@ -546,7 +538,7 @@ app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
     });
 
 
-    app.delete('/api/reports/:reportId', async (req, res) => {
+    app.delete('/api/reports/:reportId', verifyToken, verifyAdmin, async (req, res) => {
 
       const { reportId } = req.params;
 
@@ -574,12 +566,10 @@ app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
 
 
 
-
-
     // feature api //////////////////
 
 
-    app.patch('/api/recipes/feature/:id', async (req, res) => {
+    app.patch('/api/recipes/feature/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const { isFeatured } = req.body;
       const query = { _id: new ObjectId(id) }
@@ -597,18 +587,10 @@ app.get('/api/user/dashboard-stats/:userID', async (req, res) => {
 
 
 
-    // extras ///////////////////
-
-
-
-
-
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    
     console.log('everything is oky')
   }
 }
@@ -623,4 +605,4 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
-})
+})  
