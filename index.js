@@ -253,14 +253,17 @@ app.get('/api/recipes/home-data', async (req, res) => {
 
     // api for favorites //////////////////////////
 
-    app.get('/api/myFavorites/:userId', async (req, res) => {
+    app.get('/api/myFavorites/:userId',  async (req, res) => {
       const userid = req.params.userId;
-      const query = { authorId: userid };
+      const query = { 
+userId: userid };
       const result = await favoritesCollection.find(query).toArray();
       res.json(result);
-
+      console.log(result , 'from backend ')
     }
     )
+
+
 
     app.post('/api/favorites',verifyToken, async (req, res) => {
       const favoriteRecipe = req.body;
